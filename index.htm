@@ -1,0 +1,329 @@
+<html>
+    <head>
+        <script type="text/javascript">
+            var loaded = "";
+	var regdone = "";
+	var keysdone = "";
+            function load(){ //Loads config template from selected.
+                
+                document.Output.outconfig.value = ""
+                if (loaded != document.List.config.value) {
+                    /*
+                     var c = document.Input.elements.length;
+                     for (i = 0; i < c; i++) {
+                     // if(document.Input.elements[0].type=="text")
+                     //{
+                     document.Input.removeChild(document.Input.elements[0]);
+                     // }
+                     }*/
+                    document.Input.innerHTML = "";
+                }
+                var client = new XMLHttpRequest();
+                client.open('GET', "forms/" + document.List.config.value + '?a=' + Date());
+                client.onreadystatechange = function(){
+                    if (this.readyState == 4) {
+                        if (loaded == document.List.config.value) {
+                            document.Output.outconfig.value = client.responseText;
+                        }
+                        else {
+                            addtext(client.responseText);
+                            loaded = document.List.config.value;
+                        }
+                        
+                    }
+                document.getElementById("gohidden").style.visibility = 'visible';
+
+                }
+                
+                
+                client.send("test");
+                
+                
+            }
+            
+            
+            var clientlist = new XMLHttpRequest();
+            clientlist.open('GET', 'filelist.txt?a=' + Date());
+            
+            clientlist.onreadystatechange = function(){ //File loading list
+                if (this.readyState == 4) {
+                
+                    files = clientlist.responseText.split("\n");
+                    for (var i = 0; i < files.length; i++) {
+                        addfile(files[i]);
+                    }
+                    
+                }
+            }
+            clientlist.send("work around");
+            
+            var keysm = new XMLHttpRequest();
+            keysm.open('GET', 'keys.txt?a=' + Date());
+            
+            var keysi = [];
+            
+            keysm.onreadystatechange = function(){ //Key loading
+                var pattern = /^([A-Za-z0-9_]+)\s/gm
+                var pattern2 = / (.+)$/gm
+                if (this.readyState == 4) {
+                    keysraw = keysm.responseText.split("\n");
+                    
+                    for (var i = 0; i < keysraw.length; i++) {
+                        keysi[keysraw[i].match(pattern)] = keysraw[i].match(pattern2);
+                    }
+                    
+                }
+
+		keysdone = true;
+                        if(regdone==true & keysdone==true){
+                                        document.getElementById("loadhidden").style.visibility = 'visible';}
+
+            }
+            keysm.send("work around for older browsers");
+            
+            
+            function addfile(x){ //Function used to add each option to the drop down list to select config file template
+		if (x != ""){
+                var optn = document.createElement("OPTION");
+                optn.text = x;
+                optn.value = x;
+                if (navigator.userAgent.indexOf('MSIE') != -1) //if we are IE we do something else 
+                {
+                    var s1 = document.getElementById("config");
+                    if (optn) {
+                        if (s1) {
+                            s1.add(optn);
+                        }
+                        else {
+                            window.location.reload(false);
+                        } //forces IE to refresh due to missing vars
+                    }
+                    else {
+                        window.location.reload(false);
+                    } //forces IE to refresh due to missing vars
+                }
+                else {
+                    document.List.config.appendChild(optn);
+                    
+                }
+            }
+	}
+            
+            
+            function unique(a){ // Dirty function to return an array of only unqiue keys. Used to not double on fields.
+                var r = new Array();
+                o: for (var i = 0, n = a.length; i < n; i++) {
+                    for (var x = i + 1; x < n; x++) {
+                        if (a[x] == a[i]) 
+                            continue o;
+                    }
+                    r[r.length] = a[i];
+                }
+                return r;
+            }
+            
+            function addtext(httpget){ //Finds the keys in the file
+                document.Output.outconfig.value = httpget;
+                var keys = /<<[a-zA-Z_0-9]+>>/g;
+                keys = httpget.match(keys);
+                keys = unique(keys);
+                document.Input.innerHTML += '<div class="container" id="confc"></div>';
+                for (var i = 0; i < keys.length; i++) {
+                    keyinit(keys[i]);
+                }
+                document.getElementById("confc").innerHTML += '<div class="row"  class="configopt"></div>'; // IE Kludge to rerender CSS after adding the last row.
+            }
+            
+            function keyinit(x){ //Adds each input box
+                x = x.replace(/[<>]/g, "");
+                if (keysi[x + " "]) {
+                    document.getElementById("confc").innerHTML += '<div class="row"  class="configopt"><div class="cell-left"><span class="entry">' + keysi[x + " "] + '</span></div><div id="' + x + '" class="cell-right"></div></div>';
+                }
+                else {
+                    document.getElementById("confc").innerHTML += '<div class="row"  class="configopt"><div class="cell-left"><span class="entry">' + x + '</span></div><div id="' + x + '" class="cell-right"></div></div>';
+                }
+                
+                var key = document.createElement("input");
+                key.setAttribute("type", "text");
+                key.setAttribute("value", "" + x + "");
+                key.setAttribute("name", x);
+                key.setAttribute("class", "optsconf");
+                key.setAttribute("Id", x);
+                document.getElementById(x).appendChild(key);
+                /* document.Input.innerHTML += "<br />";*/
+            
+            }
+            
+            function go(){ //Find and replace all :P
+                var failed = false;
+                for (i = 0; i < document.Input.elements.length; i++) {
+                
+                    if (reglist[document.Input.elements[i].id + " "]) {
+                        /* alert("Matched - " + document.Input.elements[i].id.match(reglist[document.Input.elements[i].id + " "]));
+                         alert("Input - " + document.Input.elements[i].value);
+                         alert("Regex - " + reglist[document.Input.elements[i].id + " "]);*/
+                        if (document.Input.elements[i].value.match(reglist[document.Input.elements[i].id + " "])) {
+                            document.Input.elements[i].setAttribute("class", "optsconfcorrect");
+                            document.Input.elements[i].setAttribute("className", "optsconfcorrect");
+                        }
+                        else {
+                            document.Input.elements[i].setAttribute("class", "optsconfwrong");
+                            document.Input.elements[i].setAttribute("className", "optsconfwrong");
+                            failed = true;
+                        }
+                    }
+                }
+                if (failed == false) {
+                    for (i = 0; i < document.Input.elements.length; i++) {
+                    
+                        if (document.Input.elements[i].type == "text") {
+                            var a = "<<" + document.Input.elements[i].id + ">>";
+                            var regex = new RegExp(a, "g");
+                            document.Output.outconfig.value = document.Output.outconfig.value.replace(regex, document.Input.elements[i].value);
+                            
+                        }
+                        
+                    }
+                }
+                else {
+                    alert("Incorrect syntax");
+                }
+            }
+            
+            var reglisthttp = new XMLHttpRequest();
+            reglisthttp.open('GET', 'regexp.txt?a=' + Date());
+            var reglist = [];
+            
+            reglisthttp.onreadystatechange = function(){ //Loads key file
+                var pattern = /^([A-Za-z0-9_]+)\s/gm
+                var pattern2 = /\s.+$/gm
+                if (this.readyState == 4) {
+                    reglistraw = reglisthttp.responseText.split("\n");
+                    for (var i = 0; i < reglistraw.length; i++) {
+                        var a = "";
+                        a = a + reglistraw[i].match(pattern2);
+                        a = "^" + a.replace(/^\s+|\s+$/g, "") + "$";
+                        /*a =  a.substr(1)*/
+                        reglist[reglistraw[i].match(pattern)] = RegExp(a, "g");
+                    }
+                    
+                }
+			regdone=true;
+			if(regdone==true & keysdone==true){
+			                document.getElementById("loadhidden").style.visibility = 'visible';}
+
+            }
+            reglisthttp.send("old browser work around"); /* For some reason firefox and older browsers need this */
+
+        </script>
+        <style type="text/css">
+            .entry {
+                font-family: Tahoma, sans-serif;
+                font-size: 10pt;
+                font-weight: bold;
+            }
+            
+            .comment {
+                font-family: Tahoma, sans-serif;
+                font-size: 10pt;
+                font-weight: normal;
+                margin: 0px;
+            }
+            
+            select, input {
+                border: 1px solid #cccccc;
+            }
+            
+            #gohidden {
+                visibility: hidden;
+            }
+            #loadhidden {
+                visibility: hidden;
+            }
+            
+            .header {
+                width: 100% height:auto;
+                float: left;
+            }
+            
+            .logo {
+                float: right;
+            }
+            
+            textarea {
+                width: 100%;
+                font-size: 9pt;
+                font-family: Tahoma, sans-serif;
+                border: 1px solid #cccccc;
+            }
+            
+            #outconfig {
+                float: left;
+            }
+            
+            .container {
+                display: table;
+                width: 700px;
+                border: 1px solid #cccccc;
+                border-top: none;
+            }
+            
+            .optsconf {
+                width: 100%;
+                border: none;
+            }
+            
+            .optsconfwrong {
+                border: medium none;
+                width: 100%;
+                background-color: #FFCCCC;
+            }
+            
+            .optsconfcorrect {
+                border: medium none;
+                width: 100%;
+                background-color: #CCFFCC;
+            }
+            
+            .row {
+                display: table-row;
+                width: 700px;
+            }
+            
+            .cell-left {
+                min-width: 500px;
+                padding-left: 3px;
+                display: table-cell;
+                border-top: 1px solid #cccccc;
+            }
+            
+            .cell-right {
+                min-width: 200px;
+                display: table-cell;
+                border-top: 1px solid #cccccc;
+                border-left: 1px solid #cccccc;
+            }
+        </style>
+    </head>
+    <body>
+        <img class="logo" src="Openforms.png" width=300px/>
+        <div class="header">
+            <form name="List" id="list"">
+                <SELECT NAME="config" id="config">
+                </SELECT>
+                <INPUT type="button" value="Load" id="loadhidden" onclick="load()"/>
+            </form>
+            <form name="Input">
+            </form>
+            <form>
+                <INPUT type="button" value="Go" onclick="go()" id="gohidden" />
+            </form>
+        </div>
+        <div class="smartField">
+            <form name="Output">
+                <textarea name="outconfig" id="outconfig" rows=1500 spellcheck="false">
+                </textarea>
+            </form>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,2 @@
+fullname Your full name at birth <p class=comment>This is an example of small text</p>
+phonenumber Phone number without spaces <p class=comment>Eg, +6111111111
